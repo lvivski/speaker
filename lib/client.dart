@@ -11,8 +11,10 @@ class SpeakClient {
   var _connections = new Map<int,RtcPeerConnection>();
   var _streams = new List<MediaStream>();
 
-  var _messages;
-  var _events = new StreamController();
+  var _messageController = new StreamController();
+  Stream<MessageEvent> _messages;
+
+  Stream _messageStream;
 
   var _iceServers = {
     'iceServers': [{
@@ -29,6 +31,8 @@ class SpeakClient {
 
   SpeakClient(url) {
     _socket = new WebSocket(url);
+
+    _messageStream = _messageController.stream.asBroadcastStream();
 
     _socket.onOpen.listen((e){
       _send('join', {
@@ -67,13 +71,13 @@ class SpeakClient {
 
     onOffer.listen((message) {
       var pc = _connections[message['id']];
-      pc.setRemoteDescription(new RtcSessionDescription(message['sdp']));
+      pc.setRemoteDescription(new RtcSessionDescription(message['description']));
       _createAnswer(message['id'], pc);
     });
 
     onAnswer.listen((message) {
       var pc = _connections[message['id']];
-      pc.setRemoteDescription(new RtcSessionDescription(message['sdp']));
+      pc.setRemoteDescription(new RtcSessionDescription(message['description']));
     });
   }
 
@@ -87,9 +91,9 @@ class SpeakClient {
 
   get onPeers => _messages.where((m) => m['type'] == 'peers');
 
-  get onAdd => _events.stream.where((m) => m['type'] == 'add');
+  get onAdd => _messageStream.where((m) => m['type'] == 'add');
 
-  get onRemove => _events.stream.where((m) => m['type'] == 'remove');
+  get onRemove => _messageStream.where((m) => m['type'] == 'remove');
 
   createStream({audio: false, video: false}) {
     var completer = new Completer<MediaStream>();
@@ -131,14 +135,14 @@ class SpeakClient {
     });
 
     pc.onAddStream.listen((e) {
-      _events.add({
+      _messageController.add({
         'type': 'add',
         'data': e
       });
     });
 
     pc.onRemoveStream.listen((e) {
-      _events.add({
+      _messageController.add({
         'type': 'remove',
         'data': e
       });
@@ -152,7 +156,7 @@ class SpeakClient {
       pc.setLocalDescription(s);
       _send('offer', {
           'id': socket,
-          'sdp': {
+          'description': {
             'sdp': s.sdp,
             'type': s.type
           }
@@ -165,7 +169,7 @@ class SpeakClient {
       pc.setLocalDescription(s);
       _send('answer', {
           'id': socket,
-          'sdp': {
+          'description': {
             'sdp': s.sdp,
             'type': s.type
           }

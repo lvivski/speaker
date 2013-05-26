@@ -8,16 +8,21 @@ import 'dart:collection';
 class SpeakServer {
   HttpServer _server;
   var _sockets = new Map<int,WebSocket>();
-  var _handlers = new List<Map>();
   var _rooms = new Map<String,List<int>>();
+  var _messageController = new StreamController();
+  Stream _messages;
 
   SpeakServer() {
-    on('join', (event, socket) {
-      if (_rooms[event['room']] == null) {
-        _rooms[event['room']] = new List<int>();
+    _messages = _messageController.stream.asBroadcastStream();
+
+    onJoin.listen((message) {
+      var socket = message['socket'];
+
+      if (_rooms[message['room']] == null) {
+        _rooms[message['room']] = new List<int>();
       }
 
-      _rooms[event['room']].forEach((client) {
+      _rooms[message['room']].forEach((client) {
         _sockets[client].add(JSON.stringify({
           'type': 'new',
           'id': socket.hashCode
@@ -26,44 +31,58 @@ class SpeakServer {
 
       socket.add(JSON.stringify({
         'type': 'peers',
-        'connections': _rooms[event['room']],
+        'connections': _rooms[message['room']],
         'you': socket.hashCode
       }));
 
-      _rooms[event['room']].add(socket.hashCode);
+      _rooms[message['room']].add(socket.hashCode);
     });
 
-    on('offer', (event, socket) {
-      var soc = _sockets[event['id']];
+    onOffer.listen((message) {
+      var socket = message['socket'];
+
+      var soc = _sockets[message['id']];
 
       soc.add(JSON.stringify({
         'type': 'offer',
-        'sdp': event['sdp'],
+        'description': message['description'],
         'id': socket.hashCode
       }));
     });
 
-    on('answer', (event, socket) {
-      var soc = _sockets[event['id']];
+    onAnswer.listen((message) {
+      var socket = message['socket'];
+
+      var soc = _sockets[message['id']];
 
       soc.add(JSON.stringify({
         'type': 'answer',
-        'sdp': event['sdp'],
+        'description': message['description'],
         'id': socket.hashCode
       }));
     });
 
-    on('candidate', (event, socket) {
-      var soc = _sockets[event['id']];
+    onCandidate.listen((message) {
+      var socket = message['socket'];
+
+      var soc = _sockets[message['id']];
 
       soc.add(JSON.stringify({
         'type': 'candidate',
-        'label': event['label'],
-        'candidate': event['candidate'],
+        'label': message['label'],
+        'candidate': message['candidate'],
         'id': socket.hashCode
       }));
     });
   }
+
+  get onJoin => _messages.where((m) => m['type'] == 'join');
+
+  get onOffer => _messages.where((m) => m['type'] == 'offer');
+
+  get onAnswer => _messages.where((m) => m['type'] == 'answer');
+
+  get onCandidate => _messages.where((m) => m['type'] == 'candidate');
 
   Future<SpeakServer> listen(String host, num port) {
     return HttpServer.bind(host, port).then((HttpServer server) {
@@ -72,8 +91,10 @@ class SpeakServer {
       _server.transform(new WebSocketTransformer()).listen((WebSocket socket) {
         _sockets[socket.hashCode] = socket;
 
-        socket.listen((event) {
-          emit(event, socket);
+        socket.listen((m) {
+          var message = JSON.parse(m);
+          message['socket'] = socket;
+          _messageController.add(message);
         },
         onDone: () {
           int id = socket.hashCode;
@@ -97,21 +118,4 @@ class SpeakServer {
       return this;
     });
   }
-
-  emit(event, socket) {
-    event = JSON.parse(event);
-    var handlers = _lookup(event);
-    if (handlers.length > 0) {
-      handlers.forEach((handler) => handler['handler'](event, socket));
-    }
-  }
-
-  on(event, handler) {
-    _handlers.add({
-      'event': event,
-      'handler': handler
-    });
-  }
-
-  List<Map> _lookup(Map event) => _handlers.where((handler) => handler['event'] == event['type']).toList();
 }

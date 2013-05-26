@@ -137,14 +137,16 @@ class SpeakClient {
     pc.onAddStream.listen((e) {
       _messageController.add({
         'type': 'add',
-        'data': e
+        'id': id,
+        'stream': e.stream
       });
     });
 
     pc.onRemoveStream.listen((e) {
       _messageController.add({
         'type': 'remove',
-        'data': e
+        'id': id,
+        'stream': e.stream
       });
     });
 

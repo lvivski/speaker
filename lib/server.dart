@@ -66,7 +66,7 @@ class SpeakServer {
   }
 
   Future<SpeakServer> listen(String host, num port) {
-    return HttpServer.bind(host, port).then((HttpServer server){
+    return HttpServer.bind(host, port).then((HttpServer server) {
       _server = server;
 
       _server.transform(new WebSocketTransformer()).listen((WebSocket socket) {

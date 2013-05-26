@@ -69,6 +69,12 @@ class SpeakClient {
       });
     });
 
+    onLeave.listen((message) {
+      var id = message['id'];
+      _connections.remove(id);
+      _sockets.remove(id);
+    });
+
     onOffer.listen((message) {
       var pc = _connections[message['id']];
       pc.setRemoteDescription(new RtcSessionDescription(message['description']));
@@ -90,6 +96,8 @@ class SpeakClient {
   get onNew => _messages.where((m) => m['type'] == 'new');
 
   get onPeers => _messages.where((m) => m['type'] == 'peers');
+
+  get onLeave => _messages.where((m) => m['type'] == 'leave');
 
   get onAdd => _messageStream.where((m) => m['type'] == 'add');
 

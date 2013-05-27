@@ -1,5 +1,8 @@
 name: speak
-description: A sample command-line application
+version: 0.0.1
+author: Yehor Lvivski <lvivski@gmail.com>
+description: WebRTC client/server library
+homepage: http://github.com/lvivski/speak
 
 #dependencies:
 #  unittest: any

@@ -1,4 +1,4 @@
-library speak_client;
+library speaker_client;
 
 import 'dart:html';
 import 'dart:json' as JSON;

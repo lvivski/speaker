@@ -1,4 +1,4 @@
-library speak_server;
+library speaker_server;
 
 import 'dart:io';
 import 'dart:async';

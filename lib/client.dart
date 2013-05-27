@@ -10,6 +10,7 @@ class SpeakerClient {
   int _self;
 
   var _connections = new Map<int,RtcPeerConnection>();
+  var _data = new Map<int,RtcDataChannel>();
   var _streams = new List<MediaStream>();
 
   var _messageController = new StreamController();
@@ -22,10 +23,19 @@ class SpeakerClient {
     }]
   };
 
+  var _dataConfig = {
+    'optional': [{
+      'RtpDataChannels': true
+    }, {
+      'DtlsSrtpKeyAgreement': true
+    }]
+  };
+
   /* dart2js doesn't do recursive convertDartToNative_Dictionary()
    * and it fails in Chrome
    * so I had to remove constraints for now
   var _constraints = {
+    'optional': [],
     'mandatory': {
       'OfferToReceiveAudio': true,
       'OfferToReceiveVideo': true
@@ -76,6 +86,7 @@ class SpeakerClient {
     onLeave.listen((message) {
       var id = message['id'];
       _connections.remove(id);
+      _data.remove(id);
       _sockets.remove(id);
     });
 
@@ -107,6 +118,8 @@ class SpeakerClient {
 
   get onRemove => _messageStream.where((m) => m['type'] == 'remove');
 
+  get onData => _messageStream.where((m) => m['type'] == 'data');
+
   createStream({ audio: false, video: false }) {
     var completer = new Completer<MediaStream>();
 
@@ -125,6 +138,8 @@ class SpeakerClient {
         _connections.forEach((k, c) => c.addStream(s));
       });
 
+      _connections.forEach((s, c) => _createDataChannel(s, c));
+
       _connections.forEach((s, c) => _createOffer(s, c));
 
       completer.complete(stream);
@@ -133,8 +148,14 @@ class SpeakerClient {
     return completer.future;
   }
 
+  send(data) {
+    _data.forEach((k, d) {
+      d.send(data);
+    });
+  }
+
   _createPeerConnection(id) {
-    var pc = new RtcPeerConnection(_iceServers);
+    var pc = new RtcPeerConnection(_iceServers, _dataConfig);
 
     pc.onIceCandidate.listen((e){
       if (e.candidate != null) {
@@ -162,7 +183,32 @@ class SpeakerClient {
       });
     });
 
+    pc.onDataChannel.listen((e) {
+      _addDataChannel(id, e.channel);
+    });
+
     return pc;
+  }
+
+  _addDataChannel(id, RtcDataChannel channel) {
+    channel.onOpen.listen((e){});
+
+    channel.onMessage.listen((e){
+      _messageController.add({
+        'type': 'data',
+        'id': id,
+        'data': e.data
+      });
+    });
+
+    channel.onClose.listen((e){});
+
+    _data[id] = channel;
+  }
+
+  _createDataChannel(id, RtcPeerConnection pc, { label: 'fileTransfer' }) {
+    var channel = pc.createDataChannel(label, { 'reliable': false });
+    _addDataChannel(id, channel);
   }
 
   _createOffer(int socket, RtcPeerConnection pc) {

@@ -22,12 +22,18 @@ class SpeakClient {
     }]
   };
 
+  /* dart2js doesn't do recursive convertDartToNative_Dictionary()
+   * and it fails in Chrome
+   * so I had to remove constraints for now
   var _constraints = {
     'mandatory': {
       'OfferToReceiveAudio': true,
       'OfferToReceiveVideo': true
     }
   };
+  */
+
+  var _constraints = {};
 
   SpeakClient(url, { room: '' }): _socket = new WebSocket(url) {
     _messageStream = _messageController.stream.asBroadcastStream();

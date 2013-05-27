@@ -15,6 +15,20 @@ void main() {
 
 ### Client
 
+#### API
+
+You start your stream with `.createStream()` method. 
+
+There are several Event Streams for you 
+
+* `onAdd` Ñ when a peer is connected
+* `onLeave` Ñ when peer leaves
+* `onData` Ñ receive p2p data
+
+You can send p2p data via `.send()` method (data will be sent to all peers).
+
+#### Example
+
 ```dart
 import 'dart:html';
 import 'package:speaker/client.dart';

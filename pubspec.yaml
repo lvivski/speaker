@@ -1,5 +1,5 @@
 name: speaker
-version: 0.0.1
+version: 0.0.2
 author: Yehor Lvivski <lvivski@gmail.com>
 description: WebRTC client/server library
 homepage: http://github.com/lvivski/speaker

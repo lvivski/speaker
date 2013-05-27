@@ -3,12 +3,13 @@ library speak_server;
 import 'dart:io';
 import 'dart:async';
 import 'dart:json' as JSON;
-import 'dart:collection';
 
 class SpeakServer {
   HttpServer _server;
+
   var _sockets = new Map<int,WebSocket>();
   var _rooms = new Map<String,List<int>>();
+
   var _messageController = new StreamController();
   Stream _messages;
 
@@ -100,7 +101,7 @@ class SpeakServer {
           int id = socket.hashCode;
           _sockets.remove(id);
 
-          Maps.forEach(_rooms, (room, clients) {
+          _rooms.forEach((room, clients) {
             if (clients.contains(id)) {
               clients.remove(id);
 

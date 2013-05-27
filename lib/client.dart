@@ -8,12 +8,12 @@ class SpeakClient {
   WebSocket _socket;
   List<int> _sockets;
   int _self;
+
   var _connections = new Map<int,RtcPeerConnection>();
   var _streams = new List<MediaStream>();
 
   var _messageController = new StreamController();
   Stream<MessageEvent> _messages;
-
   Stream _messageStream;
 
   var _iceServers = {
@@ -29,14 +29,12 @@ class SpeakClient {
     }
   };
 
-  SpeakClient(url) {
-    _socket = new WebSocket(url);
-
+  SpeakClient(url, { room: '' }): _socket = new WebSocket(url) {
     _messageStream = _messageController.stream.asBroadcastStream();
 
     _socket.onOpen.listen((e){
       _send('join', {
-        'room': ''
+        'room': room
       });
     });
 
@@ -103,7 +101,7 @@ class SpeakClient {
 
   get onRemove => _messageStream.where((m) => m['type'] == 'remove');
 
-  createStream({audio: false, video: false}) {
+  createStream({ audio: false, video: false }) {
     var completer = new Completer<MediaStream>();
 
     window.navigator.getUserMedia(audio: audio, video: video).then((stream) {

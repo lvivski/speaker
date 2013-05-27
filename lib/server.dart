@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:json' as JSON;
 
-class SpeakServer {
+class SpeakerServer {
   HttpServer _server;
 
   var _sockets = new Map<int,WebSocket>();
@@ -13,11 +13,11 @@ class SpeakServer {
   var _messageController = new StreamController();
   Stream _messages;
 
-  SpeakServer() {
+  SpeakerServer() {
     _messages = _messageController.stream.asBroadcastStream();
 
     onJoin.listen((message) {
-      var socket = message['socket'];
+      var socket = message['_socket'];
 
       if (_rooms[message['room']] == null) {
         _rooms[message['room']] = new List<int>();
@@ -40,7 +40,7 @@ class SpeakServer {
     });
 
     onOffer.listen((message) {
-      var socket = message['socket'];
+      var socket = message['_socket'];
 
       var soc = _sockets[message['id']];
 
@@ -52,7 +52,7 @@ class SpeakServer {
     });
 
     onAnswer.listen((message) {
-      var socket = message['socket'];
+      var socket = message['_socket'];
 
       var soc = _sockets[message['id']];
 
@@ -64,7 +64,7 @@ class SpeakServer {
     });
 
     onCandidate.listen((message) {
-      var socket = message['socket'];
+      var socket = message['_socket'];
 
       var soc = _sockets[message['id']];
 
@@ -85,7 +85,7 @@ class SpeakServer {
 
   get onCandidate => _messages.where((m) => m['type'] == 'candidate');
 
-  Future<SpeakServer> listen(String host, num port) {
+  Future<SpeakerServer> listen(String host, num port) {
     return HttpServer.bind(host, port).then((HttpServer server) {
       _server = server;
 
@@ -94,7 +94,7 @@ class SpeakServer {
 
         socket.listen((m) {
           var message = JSON.parse(m);
-          message['socket'] = socket;
+          message['_socket'] = socket;
           _messageController.add(message);
         },
         onDone: () {

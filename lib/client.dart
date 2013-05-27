@@ -4,7 +4,7 @@ import 'dart:html';
 import 'dart:json' as JSON;
 import 'dart:async';
 
-class SpeakClient {
+class SpeakerClient {
   WebSocket _socket;
   List<int> _sockets;
   int _self;
@@ -35,7 +35,7 @@ class SpeakClient {
 
   var _constraints = {};
 
-  SpeakClient(url, { room: '' }): _socket = new WebSocket(url) {
+  SpeakerClient(url, { room: '' }): _socket = new WebSocket(url) {
     _messageStream = _messageController.stream.asBroadcastStream();
 
     _socket.onOpen.listen((e){

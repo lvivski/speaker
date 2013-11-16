@@ -2,7 +2,7 @@ library speaker_server;
 
 import 'dart:io';
 import 'dart:async';
-import 'dart:json' as JSON;
+import 'dart:convert';
 
 class SpeakerServer {
   HttpServer _server;
@@ -24,13 +24,13 @@ class SpeakerServer {
       }
 
       _rooms[message['room']].forEach((client) {
-        _sockets[client].add(JSON.stringify({
+        _sockets[client].add(JSON.encode({
           'type': 'new',
           'id': socket.hashCode
         }));
       });
 
-      socket.add(JSON.stringify({
+      socket.add(JSON.encode({
         'type': 'peers',
         'connections': _rooms[message['room']],
         'you': socket.hashCode
@@ -44,7 +44,7 @@ class SpeakerServer {
 
       var soc = _sockets[message['id']];
 
-      soc.add(JSON.stringify({
+      soc.add(JSON.encode({
         'type': 'offer',
         'description': message['description'],
         'id': socket.hashCode
@@ -56,7 +56,7 @@ class SpeakerServer {
 
       var soc = _sockets[message['id']];
 
-      soc.add(JSON.stringify({
+      soc.add(JSON.encode({
         'type': 'answer',
         'description': message['description'],
         'id': socket.hashCode
@@ -68,7 +68,7 @@ class SpeakerServer {
 
       var soc = _sockets[message['id']];
 
-      soc.add(JSON.stringify({
+      soc.add(JSON.encode({
         'type': 'candidate',
         'label': message['label'],
         'candidate': message['candidate'],
@@ -93,7 +93,7 @@ class SpeakerServer {
         _sockets[socket.hashCode] = socket;
 
         socket.listen((m) {
-          var message = JSON.parse(m);
+          var message = JSON.decode(m);
           message['_socket'] = socket;
           _messageController.add(message);
         },
@@ -106,7 +106,7 @@ class SpeakerServer {
               clients.remove(id);
 
               clients.forEach((client) {
-                _sockets[client].add(JSON.stringify({
+                _sockets[client].add(JSON.encode({
                   'type': 'leave',
                   'id': id
                 }));

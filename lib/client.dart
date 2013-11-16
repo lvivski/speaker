@@ -1,7 +1,7 @@
 library speaker_client;
 
 import 'dart:html';
-import 'dart:json' as JSON;
+import 'dart:convert';
 import 'dart:async';
 
 class SpeakerClient {
@@ -14,7 +14,7 @@ class SpeakerClient {
   var _streams = new List<MediaStream>();
 
   var _messageController = new StreamController();
-  Stream<MessageEvent> _messages;
+  Stream _messages;
   Stream _messageStream;
 
   var _iceServers = {
@@ -56,7 +56,7 @@ class SpeakerClient {
 
     _socket.onClose.listen((e){});
 
-    _messages = _socket.onMessage.map((e) => JSON.parse(e.data));
+    _messages = _socket.onMessage.map((e) => JSON.decode(e.data));
 
     onPeers.listen((message) {
       _self = message['you'];
@@ -239,6 +239,6 @@ class SpeakerClient {
 
   _send(event, data) {
     data['type'] = event;
-    _socket.send(JSON.stringify(data));
+    _socket.send(JSON.encode(data));
   }
 }
